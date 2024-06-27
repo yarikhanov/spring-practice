@@ -6,14 +6,15 @@ import com.example.spring_practice.aws.AwsClient;
 import com.example.spring_practice.entity.File;
 import com.example.spring_practice.entity.Status;
 import com.example.spring_practice.exception.FileNotFoundException;
-import com.example.spring_practice.repository.EventRepo;
-import com.example.spring_practice.repository.FileRepo;
+import com.example.spring_practice.reactive_repo.EventRepo;
+import com.example.spring_practice.reactive_repo.FileRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.List;
 
 
 @Service
@@ -25,15 +26,15 @@ public class FileService {
     private  final EventRepo eventRepo;
 
 
-    public File getById(Long id) {
-        return fileRepo.findById(id).orElseThrow(() -> new FileNotFoundException("File not found"));
+    public Mono<File> getById(Long id) {
+        return fileRepo.findById(id);
     }
 
-    public List<File> getAll() {
+    public Flux<File> getAll() {
         return fileRepo.findAll();
     }
 
-    public File uploadFile(MultipartFile uploadFile) {
+    public Mono<File> uploadFile(MultipartFile uploadFile) {
 
         try {
             java.io.File tempFile = java.io.File.createTempFile("uploadFile", ".tmp");
@@ -54,8 +55,21 @@ public class FileService {
         }
     }
 
-    public void deleteFile(Long id) {
-        fileRepo.softDeleteById(id);
-        eventRepo.softDeleteByFileId(id);
+    public Mono<Void> deleteFile(Long id) {
+        return fileRepo.findById(id)
+                .flatMap(file -> {
+                    if (file != null) {
+                        file.setStatus(Status.DELETED);
+                        Mono<Void> updatedEvents = eventRepo.findAllByFile_Id(id)
+                                .flatMap(event -> {
+                                    event.setStatus(Status.DELETED);
+                                    return eventRepo.save(event);
+                                })
+                                .then();
+                        return updatedEvents.then(fileRepo.save(file)).then();
+                    } else {
+                        return Mono.error(new FileNotFoundException("File not found"));
+                    }
+                });
     }
 }

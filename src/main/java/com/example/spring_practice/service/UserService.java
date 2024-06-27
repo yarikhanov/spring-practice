@@ -40,7 +40,7 @@ public class UserService {
     }
 
     public void deleteUserById(Long id) {
-        userRepo.softDeleteById(id);
+//        userRepo.softDeleteById(id);
     }
 
     public Mono<User> registerUser(User user) {
@@ -55,7 +55,7 @@ public class UserService {
     }
 
     public Mono<User> getUserById(Long id){
-        return userRepo.findByIdMono(id);
+        return userRepo.findById(id);
     }
 
     public Mono<User> getUserByUsername(String username){

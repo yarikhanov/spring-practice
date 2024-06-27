@@ -1,24 +1,17 @@
 package com.example.spring_practice.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
-@Table(name = "events")
+@Table("events")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -27,19 +20,21 @@ import lombok.Setter;
 public class Event {
 
     @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column("id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @Column( "user_id")
+    private Long userId;
+
+    @Column("file_id")
+    private Long fileId;
+
+    @Column( "status")
+    private Status status;
+
+    @Transient
     private User user;
 
-    @OneToOne
-    @JoinColumn(name = "file_id")
+    @Transient
     private File file;
-
-    @Column(name = "status")
-    @Enumerated(EnumType.STRING)
-    private Status status;
 }

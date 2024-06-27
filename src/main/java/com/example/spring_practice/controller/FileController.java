@@ -2,7 +2,6 @@ package com.example.spring_practice.controller;
 
 import com.example.spring_practice.entity.Event;
 import com.example.spring_practice.entity.File;
-import com.example.spring_practice.entity.User;
 import com.example.spring_practice.service.EventService;
 import com.example.spring_practice.service.FileService;
 import com.example.spring_practice.service.UserService;
@@ -18,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,33 +31,35 @@ public class FileController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('client:user')")
-    public File getFileById(@PathVariable Long id) {
+    public Mono<File> getFileById(@PathVariable Long id) {
         return fileService.getById(id);
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('client:moderator')")
-    public List<File> getAllFiles() {
+    public Flux<File> getAllFiles() {
         return fileService.getAll();
     }
 
 
     @PostMapping
     @PreAuthorize("hasAuthority('client:user')")
-    public File saveFile(@RequestBody MultipartFile file) {
+    public Mono<File> saveFile(@RequestBody MultipartFile file) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUserName = authentication.getName();
-        User user = userService.getUserByUsername(currentUserName).block();
 
+        return userService.getUserByUsername(currentUserName)
+                .flatMap(user -> {
+                    return fileService.uploadFile(file)
+                            .flatMap(f -> {
+                                Event event = new Event().toBuilder()
+                                        .file(f)
+                                        .user(user)
+                                        .build();
 
-        File uploadFile = fileService.uploadFile(file);
-        Event event = new Event().toBuilder()
-                .file(uploadFile)
-                .user(user)
-                .build();
-        eventService.addEvent(event);
-
-        return uploadFile;
+                                return eventService.addEvent(event).thenReturn(f);
+                            });
+                });
     }
 
     @DeleteMapping("/{id}")

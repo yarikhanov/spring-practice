@@ -1,27 +1,19 @@
 package com.example.spring_practice.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.util.List;
 
-@Entity
-@Table(name = "users")
+@Table("users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -31,26 +23,23 @@ public class User {
 
 
     @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column("id")
     private Long id;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Event> events;
-
-    @Column(name = "username")
+    @Column("username")
     private String username;
 
-    @Column(name = "password")
+    @Column("password")
     private String password;
 
-    @Column(name = "user_role")
-    @Enumerated(EnumType.STRING)
+    @Column("user_role")
     private UserRole userRole;
 
-    @Column(name = "status")
-    @Enumerated(EnumType.STRING)
+    @Column("status")
     private Status status;
+
+    @Transient
+    private List<Event> events;
 
     @ToString.Include(name = "password")
     private String maskPass(){

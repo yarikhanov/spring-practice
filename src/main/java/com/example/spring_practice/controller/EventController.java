@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,13 +21,13 @@ public class EventController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('client:moderator')")
-    public List<Event> getAllEvents() {
+    public Flux<Event> getAllEvents() {
         return eventService.getAllEvents();
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('client:user')")
-    public Event getEventById(@PathVariable Long id) {
+    public Mono<Event> getEventById(@PathVariable Long id) {
         return eventService.getById(id);
     }
 

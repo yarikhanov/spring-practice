@@ -1,12 +1,14 @@
 package com.example.spring_practice.service;
 
 import com.example.spring_practice.entity.Event;
+import com.example.spring_practice.entity.Status;
 import com.example.spring_practice.exception.EventNotFoundException;
-import com.example.spring_practice.repository.EventRepo;
+import com.example.spring_practice.reactive_repo.EventRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -14,27 +16,43 @@ public class EventService {
 
     private final EventRepo eventRepo;
 
-    public Event getById(Long id) {
-        return eventRepo.findById(id).orElseThrow(() -> new EventNotFoundException("Event not found"));
+    public Mono<Event> getById(Long id) {
+        return eventRepo.findById(id);
     }
 
-    public List<Event> getAllEvents() {
+    public Flux<Event> getAllEvents() {
         return eventRepo.findAll();
     }
 
-    public Event addEvent(Event event) {
+    public Mono<Event> addEvent(Event event) {
         return eventRepo.save(event);
     }
 
-    public Event updateEvent(Event event) {
-        if (eventRepo.existsById(event.getId())) {
-            return eventRepo.save(event);
-        } else {
-            throw new EventNotFoundException("Event do not exists");
-        }
+    public Mono<Event> updateEvent(Event event) {
+        return eventRepo.existsById(event.getId())
+                .flatMap(exists -> {
+                    if (exists) {
+                        return eventRepo.save(event);
+                    } else {
+                        return Mono.error(new EventNotFoundException("Event do not exists"));
+                    }
+                });
     }
 
-    public void deleteEventById(Long id) {
-        eventRepo.softDeleteById(id);
+    public Mono<Void> deleteEventById(Long id) {
+        return eventRepo.findById(id)
+                .flatMap(event ->
+                {
+                    if (event != null) {
+                        if (event.getStatus().equals(Status.ACTIVE)) {
+                            event.setStatus(Status.DELETED);
+                            return eventRepo.save(event).then();
+                        } else {
+                            return Mono.error(new EventNotFoundException("Event do not exists"));
+                        }
+                    } else {
+                        return Mono.error(new EventNotFoundException("Event do not exists"));
+                    }
+                });
     }
 }
