@@ -1,12 +1,12 @@
 FROM mysql:8.4.0
 
+ENV MY_ROOT_USERNAME = root
 ENV MY_ROOT_PASSWORD = root
 ENV MYSQL_DATABASE = yarikhanov
 
 FROM maven:3.9.4-eclipse-temurin-17 as  build
 
-COPY src src
-COPY pom.xml pom.xml
+COPY . .
 
 FROM bellsoft/liberica-openjdk-centos:latest
 
